@@ -34,6 +34,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import cmp_app_with_jetpack_libraries.composeapp.generated.resources.Res
 import cmp_app_with_jetpack_libraries.composeapp.generated.resources.dummy_user
 import org.jetbrains.compose.resources.painterResource
@@ -43,7 +46,25 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun App() {
     MaterialTheme {
-       ListScreen(items = items) {}
+        val navController = rememberNavController()
+
+        NavHost(navController, startDestination = "list") {
+
+            composable("list") {
+                ListScreen(items = items) { user ->
+                    navController.navigate("detail/${user.id}")
+                }
+            }
+
+            composable("detail/{id}") {
+                val id = it.arguments?.getString("id") ?: ""
+                DetailScreen(id.toInt()) {
+                    navController.navigateUp()
+                }
+            }
+
+        }
+
     }
 }
 
