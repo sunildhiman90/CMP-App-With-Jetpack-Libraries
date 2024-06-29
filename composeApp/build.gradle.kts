@@ -67,13 +67,20 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
 
+            implementation(libs.navigation.compose)
+            implementation(libs.coil.compose)
 
-            implementation("org.jetbrains.androidx.navigation:navigation-compose:2.7.0-alpha07")
-            implementation("io.coil-kt.coil3:coil-compose:3.0.0-alpha06")
+
+            //after compose multiplatform 1.6.10
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+
         }
 
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.8.1")
+
         }
     }
 }

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,6 +29,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,17 +51,22 @@ fun App() {
     MaterialTheme {
         val navController = rememberNavController()
 
+        val viewModel = ListViewModel()
+
+        val items = viewModel.users.collectAsState()
+
         NavHost(navController, startDestination = "list") {
 
             composable("list") {
-                ListScreen(items = items) { user ->
+                ListScreen(state = items) { user ->
                     navController.navigate("detail/${user.id}")
                 }
             }
 
             composable("detail/{id}") {
                 val id = it.arguments?.getString("id") ?: ""
-                DetailScreen(id.toInt()) {
+                val user = items.value.data?.first { it.id == id.toInt() }
+                DetailScreen(user!!) {
                     navController.navigateUp()
                 }
             }
@@ -70,49 +78,58 @@ fun App() {
 
 @Composable
 fun ListScreen(
-    items: List<User>,
+    state: State<ListUiState>,
     onItemClick: (User) -> Unit
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(20.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(items, key = { user -> user.id }) { user ->
-            Card(
-                shape = RoundedCornerShape(15.dp),
-                modifier = Modifier
-                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
-                    .fillMaxWidth()
-                    .clickable {
-                        onItemClick(user)
-                    },
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(
-                        painter = painterResource(Res.drawable.dummy_user),
-                        contentDescription = "",
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .size(50.dp)
-                            .clip(RoundedCornerShape(5.dp))
-                    )
-                    Column {
-                        Text(text = user.name)
-                        Text(text = user.email)
-                    }
 
+    if (state.value.isLoading == true) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.size(30.dp).align(Alignment.Center))
+        }
+    }
+    else if (state.value.data != null) {
+        LazyColumn(
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(state.value.data!!, key = { user -> user.id }) { user ->
+                Card(
+                    shape = RoundedCornerShape(15.dp),
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+                        .fillMaxWidth()
+                        .clickable {
+                            onItemClick(user)
+                        },
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(Res.drawable.dummy_user),
+                            contentDescription = "",
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                        )
+                        Column {
+                            Text(text = user.name)
+                            Text(text = user.email)
+                        }
+
+                    }
                 }
             }
         }
     }
+
 }
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(userId: Int, goBack: () -> Unit) {
-    val user = items.first { it.id == userId }
+fun DetailScreen(user: User, goBack: () -> Unit) {
+
     //User Detail
     Scaffold(
         modifier = Modifier,
@@ -171,6 +188,3 @@ fun DetailScreen(userId: Int, goBack: () -> Unit) {
 }
 
 data class User(val id: Int, val name: String, val email: String)
-
-
-val items = List(20) { User(it, "User Name $it", "username$it@gmail.com") }
